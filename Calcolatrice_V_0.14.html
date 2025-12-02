@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Calcolatrice Tecnica</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&amp;display=swap" rel="stylesheet"/>
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #222;
+      color: white;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h2 { text-align: center; margin-bottom: 10px; }
+    label, input, select {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    input, select {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #888;
+      background-color: #444;
+      color: white;
+    }
+    button {
+      background: #0077cc;
+      color: white;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 6px;
+      font-size: 14px;
+      margin: 10px 0;
+      cursor: pointer;
+    }
+    button:hover { background: #005fa3; }
+    .modulo { display: none; }
+    .modulo.attivo { display: block; }
+    #mappaComune { height: 300px; margin-top: 15px; border-radius: 8px; }
+    .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  </style>
+</head>
+<body>
+
+<h2><i class="fas fa-calculator"></i> Calcolatrice V 0.14</h2>
+
+<select id="selettore" onchange="cambiaModulo()">
+  <option selected="" value="mod_margine">Margine e Markup</option>
+  <option value="mod_confronto">Confronto Bidirezionale</option>
+  <option value="mod_iva">Calcolo IVA</option>
+  <option value="mod_sconto">Calcolo Sconto</option>
+  <option value="mod_incremento">Incremento / Riduzione %</option>
+  <option value="mod_provvigione">Calcolo Provvigione</option>
+  <option value="mod_dati_comune">Dati Tecnici Comunali</option>
+  <option value="mod_carico_neve">Carico Neve (NTC)</option>
+  <option value="mod_calcolatrice_scientifica">Calcolatrice Scientifica</option>
+  <option value="mod_trasmittanza_nuove">Trasmittanza - Nuove Costr.</option>
+</select>
+
+<div class="modulo attivo" id="mod_margine">
+  <label>Costo (€): <input id="mm_costo" type="number"/></label>
+  <label>Prezzo di vendita (€): <input id="mm_entrata" type="number"/></label>
+  <label>Margine di profitto (%): <input id="mm_margine" type="number"/></label>
+  <label>Markup (%): <input id="mm_markup" type="number"/></label>
+  <label>Profitto (€): <input id="mm_profitto" type="number"/></label>
+  <button onclick="calcolaMargine()">Calcola</button>
+  <button onclick="resetCampi('mod_margine')">Azzera campi</button>
+</div>
+
+<div class="modulo" id="mod_iva">
+  <label>Prezzo netto (€): <input id="iva_netto" type="number"/></label>
+  <label>Aliquota IVA (%): <input id="iva_aliquota" type="number"/></label>
+  <label>Importo IVA (€): <input id="iva_importo" type="number"/></label>
+  <label>Prezzo lordo (€): <input id="iva_lordo" type="number"/></label>
+  <button onclick="calcolaIVA()">Calcola</button>
+  <button onclick="resetCampi('mod_iva')">Azzera campi</button>
+</div>
+
+<div class="modulo" id="mod_sconto">
+  <label>Prezzo iniziale (€): <input id="sc_prezzo" type="number"/></label>
+  <label>Sconto (%): <input id="sc_sconto" type="number"/></label>
+  <label>Prezzo scontato (€): <input id="sc_finale" type="number"/></label>
+  <button onclick="calcolaSconto()">Calcola</button>
+  <button onclick="resetCampi('mod_sconto')">Azzera campi</button>
+</div>
+
+<div class="modulo" id="mod_incremento">
+  <label>Valore iniziale (€): <input id="inc_valore_iniziale" type="number"/></label>
+  <label>Variazione (%): <input id="inc_percentuale" type="number"/></label>
+  <label>Valore finale (€): <input id="inc_valore_finale" type="number"/></label>
+  <label>Differenza (€): <input id="inc_diff" type="number"/></label>
+  <button onclick="calcolaIncremento()">Calcola</button>
+  <button onclick="resetCampi('mod_incremento')">Azzera campi</button>
+</div>
+
+<div class="modulo" id="mod_provvigione">
+  <label>Totale base (€): <input id="prov_totale" type="number"/></label>
+  <label>Provvigione (%): <input id="prov_percentuale" type="number"/></label>
+  <label>Importo provvigione (€): <input id="prov_importo" type="number"/></label>
+  <button onclick="calcolaProvvigione()">Calcola</button>
+  <button onclick="resetCampi('mod_provvigione')">Azzera campi</button>
+</div>
+
+<div class="modulo" id="mod_confronto">
+  <label>Valore iniziale (V1): <input id="cf_v1" type="number"/></label>
+  <label>Valore finale (V2): <input id="cf_v2" type="number"/></label>
+  <label>Δ (V2 - V1): <input id="cf_delta" readonly type="number"/></label>
+  <label>Variazione percentuale (%): <input id="cf_perc" readonly type="number"/></label>
+  <label>Rapporto (V2 / V1): <input id="cf_ratio" readonly type="number"/></label>
+  <button onclick="calcolaConfronto()">Calcola</button>
+  <button onclick="resetCampi('mod_confronto')">Azzera campi</button>
+</div>
+
+<div class="modulo" id="mod_calcolatrice_scientifica">
+  <input type="text" id="displayScientific" readonly style="font-size: 18px; margin-bottom: 10px;" />
+  <div class="calc-grid">
+    <button onclick="appendSci('7')">7</button> <button onclick="appendSci('8')">8</button> <button onclick="appendSci('9')">9</button> <button onclick="appendSci('/')">÷</button>
+    <button onclick="appendSci('4')">4</button> <button onclick="appendSci('5')">5</button> <button onclick="appendSci('6')">6</button> <button onclick="appendSci('*')">×</button>
+    <button onclick="appendSci('1')">1</button> <button onclick="appendSci('2')">2</button> <button onclick="appendSci('3')">3</button> <button onclick="appendSci('-')">−</button>
+    <button onclick="appendSci('0')">0</button> <button onclick="appendSci('.')">.</button> <button onclick="calculateSci()">=</button> <button onclick="appendSci('+')">+</button>
+    <button onclick="appendSci('Math.sin(')">sin</button> <button onclick="appendSci('Math.cos(')">cos</button> <button onclick="appendSci('Math.log(')">log</button> <button onclick="appendSci('Math.sqrt(')">√</button>
+    <button onclick="clearSci()">C</button> <button onclick="backspaceSci()">⌫</button> <button onclick="appendSci(')')">)</button> <button onclick="appendSci('Math.pow(')">xʸ</button>
+  </div>
+</div>
+
+<div class="modulo" id="mod_trasmittanza_nuove">
+  <label>Zona Climatica:
+  <select id="zona_climatica_select" onchange="mostraTrasmittanze()">
+    <option value="">-- Seleziona --</option>
+    <option value="A">Zona A</option><option value="B">Zona B</option><option value="C">Zona C</option>
+    <option value="D">Zona D</option><option value="E">Zona E</option><option value="F">Zona F</option>
+  </select></label>
+  <label>Opache verticali (W/m²K): <input type="text" id="trasm_vert" readonly /></label>
+  <label>Opache orizzontali (W/m²K): <input type="text" id="trasm_oriz" readonly /></label>
+  <label>Chiusure trasparenti (W/m²K): <input type="text" id="trasm_trasp" readonly /></label>
+</div>
+
+<div class="modulo" id="mod_carico_neve">
+  <label>Altitudine (m): <input id="neve_altitudine" type="number"/></label>
+  <label>Zona Neve (1–5):
+  <select id="neve_zona" onchange="aggiornaSk()">
+    <option value="1">Zona 1</option><option value="2">Zona 2</option><option value="3">Zona 3</option>
+    <option value="4">Zona 4</option><option value="5">Zona 5</option>
+  </select></label>
+  <label>Carico caratteristico sₖ (kN/m²): <input id="neve_sk" type="number" step="0.01"/></label>
+  <label>μᵢ (Coeff. forma): <input id="neve_mu" type="number" step="0.1" value="0.8"/></label>
+  <label>Cₑ (Coeff. esposizione): <input id="neve_ce" type="number" step="0.1" value="1.0"/></label>
+  <label>Cₜ (Coeff. termico): <input id="neve_ct" type="number" step="0.1" value="1.0"/></label>
+  <label>Carico neve tetto qₛ (kN/m²): <input id="neve_qs" type="number" readonly/></label>
+  <button onclick="calcolaNeve()">Calcola</button>
+  <button onclick="resetNeve()">Azzera campi</button>
+</div>
+
+<div class="modulo" id="mod_dati_comune">
+  <label>Comune:</label>
+  <select id="comune_select" onchange="popolaDatiComune()">
+    <option value="">-- Caricamento comuni... --</option>
+  </select>
+  
+  <div id="risultati_comune">
+    <label>Provincia: <span id="provincia"></span></label>
+    <label>Regione: <span id="regione"></span></label>
+    <label>Zona Sismica: <span id="sismica"></span></label>
+    <label>Zona Neve: <span id="neve"></span></label>
+    <label>Altitudine (m): <span id="altitudine"></span></label>
+    <label>Gradi Giorno: <span id="gg"></span></label>
+    <label>Zona Climatica: <span id="zona_clima"></span></label>
+    <label>Latitudine: <span id="lat"></span></label>
+    <label>Longitudine: <span id="lon"></span></label>
+  </div>
+  <div id="mappaComune"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="dati.js"></script> 
+
+<script>
+// Logica dell'applicazione
+function cambiaModulo() {
+  document.querySelectorAll('.modulo').forEach(div => div.classList.remove('attivo'));
+  document.getElementById(document.getElementById('selettore').value).classList.add('attivo');
+}
+function resetCampi(id) { 
+  document.querySelectorAll('#' + id + ' input').forEach(i => i.value = ""); 
+}
+
+// Funzioni Calcolo Commerciale
+function calcolaMargine() {
+  let c = parseFloat(mm_costo.value), e = parseFloat(mm_entrata.value), m = parseFloat(mm_margine.value), u = parseFloat(mm_markup.value), p = parseFloat(mm_profitto.value);
+  if (!isNaN(c) && !isNaN(e)) { mm_profitto.value = (e - c).toFixed(2); mm_margine.value = (((e - c) / e) * 100).toFixed(2); mm_markup.value = (((e - c) / c) * 100).toFixed(2); }
+  else if (!isNaN(c) && !isNaN(m)) { e = c / (1 - m / 100); mm_entrata.value = e.toFixed(2); mm_profitto.value = (e - c).toFixed(2); mm_markup.value = (((e - c) / c) * 100).toFixed(2); }
+  else if (!isNaN(c) && !isNaN(u)) { e = c * (1 + u / 100); mm_entrata.value = e.toFixed(2); mm_profitto.value = (e - c).toFixed(2); mm_margine.value = (((e - c) / e) * 100).toFixed(2); }
+  else if (!isNaN(e) && !isNaN(m)) { c = e * (1 - m / 100); mm_costo.value = c.toFixed(2); mm_profitto.value = (e - c).toFixed(2); mm_markup.value = (((e - c) / c) * 100).toFixed(2); }
+}
+
+function calcolaIVA() {
+  let n = parseFloat(iva_netto.value), a = parseFloat(iva_aliquota.value), l = parseFloat(iva_lordo.value);
+  if (!isNaN(n) && !isNaN(a)) { iva_importo.value = (n * a / 100).toFixed(2); iva_lordo.value = (n * (1 + a / 100)).toFixed(2); }
+  else if (!isNaN(l) && !isNaN(a)) { iva_netto.value = (l / (1 + a / 100)).toFixed(2); iva_importo.value = (l - iva_netto.value).toFixed(2); }
+}
+
+function calcolaSconto() {
+  let p = parseFloat(sc_prezzo.value), s = parseFloat(sc_sconto.value);
+  if (!isNaN(p) && !isNaN(s)) sc_finale.value = (p * (1 - s / 100)).toFixed(2);
+}
+
+function calcolaIncremento() {
+  let vi = parseFloat(inc_valore_iniziale.value), p = parseFloat(inc_percentuale.value);
+  if (!isNaN(vi) && !isNaN(p)) {
+    inc_valore_finale.value = (vi * (1 + p / 100)).toFixed(2);
+    inc_diff.value = (vi * (p / 100)).toFixed(2);
+  }
+}
+
+function calcolaProvvigione() {
+  let t = parseFloat(prov_totale.value), p = parseFloat(prov_percentuale.value);
+  if (!isNaN(t) && !isNaN(p)) prov_importo.value = (t * p / 100).toFixed(2);
+}
+
+function calcolaConfronto() {
+  let v1 = parseFloat(cf_v1.value), v2 = parseFloat(cf_v2.value);
+  if (!isNaN(v1) && !isNaN(v2)) {
+    let delta = v2 - v1;
+    cf_delta.value = delta.toFixed(2);
+    cf_perc.value = ((delta / v1) * 100).toFixed(2);
+    cf_ratio.value = (v2 / v1).toFixed(4);
+  }
+}
+
+// Calcolatrice Scientifica
+function appendSci(val) { document.getElementById('displayScientific').value += val; }
+function clearSci() { document.getElementById('displayScientific').value = ''; }
+function backspaceSci() { 
+  let display = document.getElementById('displayScientific'); 
+  display.value = display.value.slice(0, -1); 
+}
+function calculateSci() { 
+  let display = document.getElementById('displayScientific'); 
+  try { display.value = eval(display.value); } catch { display.value = 'Errore'; } 
+}
+
+// Carico Neve
+function aggiornaSk() {
+  const zona = parseInt(document.getElementById('neve_zona').value);
+  const alt = parseFloat(document.getElementById('neve_altitudine').value);
+  let sk = 0;
+  if (!isNaN(zona) && !isNaN(alt)) {
+    if(zona===1) sk = 1.5 + 0.003 * Math.max(0, alt - 200);
+    else if(zona===2) sk = 1.0 + 0.002 * Math.max(0, alt - 200);
+    else if(zona===3) sk = 0.7 + 0.001 * Math.max(0, alt - 200);
+    else if(zona===4) sk = 0.5 + 0.0005 * Math.max(0, alt - 200);
+    else if(zona===5) sk = 0.3 + 0.0003 * Math.max(0, alt - 200);
+    document.getElementById('neve_sk').value = sk.toFixed(2);
+  }
+}
+function calcolaNeve() {
+  const sk = parseFloat(document.getElementById('neve_sk').value);
+  const mu = parseFloat(document.getElementById('neve_mu').value);
+  const ce = parseFloat(document.getElementById('neve_ce').value);
+  const ct = parseFloat(document.getElementById('neve_ct').value);
+  if (!isNaN(sk)) document.getElementById('neve_qs').value = (sk * mu * ce * ct).toFixed(2);
+}
+function resetNeve() {
+  resetCampi('mod_carico_neve');
+  document.getElementById('neve_mu').value = "0.8";
+  document.getElementById('neve_ce').value = "1.0";
+  document.getElementById('neve_ct').value = "1.0";
+}
+
+// Trasmittanza
+function mostraTrasmittanze() {
+  if(typeof trasmittanze === 'undefined') return;
+  const zona = document.getElementById('zona_climatica_select').value;
+  const dati = trasmittanze.find(t => t["zona climatica"] === zona);
+  if (dati) {
+    document.getElementById('trasm_vert').value = dati["opache verticali"];
+    document.getElementById('trasm_oriz').value = dati["opache orizzontali"];
+    document.getElementById('trasm_trasp').value = dati["chiusure trasparenti"];
+  }
+}
+
+// Gestione Comuni (Dati caricati da dati.js)
+let mappa = null;
+let marker = null;
+
+function inizializzaSelectComuni() {
+  const select = document.getElementById('comune_select');
+  if (typeof comuniData !== 'undefined') {
+    select.innerHTML = '<option value="">-- Seleziona un comune --</option>';
+    // Ordina e popola
+    Object.keys(comuniData).sort().forEach(nome => {
+      const option = document.createElement('option');
+      option.value = nome;
+      option.textContent = nome;
+      select.appendChild(option);
+    });
+  } else {
+    select.innerHTML = '<option value="">Errore: dati.js mancante</option>';
+  }
+}
+
+function popolaDatiComune() {
+  const nome = document.getElementById('comune_select').value;
+  if (!nome || typeof comuniData === 'undefined') return;
+  
+  const dati = comuniData[nome];
+  if (dati) {
+    document.getElementById('provincia').textContent = dati.SiglaProvincia || dati.Provincia;
+    document.getElementById('regione').textContent = dati.Regione;
+    document.getElementById('sismica').textContent = dati.ZonaSismica;
+    document.getElementById('neve').textContent = dati.ZonaNeve;
+    document.getElementById('altitudine').textContent = dati.Altitudine;
+    document.getElementById('gg').textContent = dati.GradiGiorno;
+    document.getElementById('zona_clima').textContent = dati.ZonaClimatica;
+    document.getElementById('lat').textContent = dati.Latitudine;
+    document.getElementById('lon').textContent = dati.Longitudine;
+
+    // Mappa
+    if (!mappa) {
+      mappa = L.map('mappaComune').setView([dati.Latitudine, dati.Longitudine], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(mappa);
+    } else {
+      mappa.setView([dati.Latitudine, dati.Longitudine], 10);
+    }
+    if (marker) mappa.removeLayer(marker);
+    marker = L.marker([dati.Latitudine, dati.Longitudine]).addTo(mappa)
+      .bindPopup(nome).openPopup();
+  }
+}
+
+// Avvio al caricamento pagina
+window.onload = function() {
+  inizializzaSelectComuni();
+};
+</script>
+</body>
+</html>
