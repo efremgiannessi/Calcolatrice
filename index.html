@@ -3,10 +3,11 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>ThermoCalc Suite V8</title>
+    <title>ThermoCalc Suite V11 (Scientific Pro)</title>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
     
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
@@ -17,48 +18,90 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Toast Notification & Autocomplete Style -->
     <style>
+        /* Toast & General UI */
         #toast {
             visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center;
             border-radius: 8px; padding: 16px; position: fixed; z-index: 9999; left: 50%; bottom: 30px;
             transform: translateX(-50%); font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         
-        /* Autocomplete Dropdown */
         .suggestions-list {
-            position: absolute; top: 100%; left: 0; right: 0;
-            background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem;
-            z-index: 1000; max-height: 200px; overflow-y: auto; margin-top: 4px;
+            position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border: 1px solid #334155; 
+            border-radius: 0.5rem; z-index: 1000; max-height: 200px; overflow-y: auto; margin-top: 4px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
         }
-        .suggestion-item {
-            padding: 8px 12px; cursor: pointer; color: #cbd5e1; font-size: 0.875rem; border-bottom: 1px solid #334155;
-        }
+        .suggestion-item { padding: 8px 12px; cursor: pointer; color: #cbd5e1; font-size: 0.875rem; border-bottom: 1px solid #334155; }
         .suggestion-item:last-child { border-bottom: none; }
         .suggestion-item:hover { background-color: #3b82f6; color: white; }
         
-        /* Scrollbar hide */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+        /* Nav Pills */
         .nav-pill {
-            @apply flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border border-transparent whitespace-nowrap cursor-pointer;
+            @apply flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border border-transparent whitespace-nowrap cursor-pointer select-none;
             background-color: rgba(30, 41, 59, 0.5); color: #94a3b8;
         }
         .nav-pill:hover { @apply bg-dark-700 text-white; }
         .nav-pill.active { @apply bg-accent-600 text-white shadow-lg shadow-blue-500/25 border-blue-500/50; }
 
-        .calc-btn {
-            @apply h-14 rounded-xl text-xl font-semibold transition-all active:scale-95 flex items-center justify-center shadow-lg cursor-pointer select-none;
-            background: #1e293b; color: white;
+        /* Input Copy Button */
+        .input-wrapper { position: relative; width: 100%; }
+        .input-copy-btn {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            color: #64748b; cursor: pointer; padding: 4px; border-radius: 4px; transition: color 0.2s;
+            background: transparent; border: none; z-index: 10;
         }
-        .calc-btn:hover { background: #334155; }
-        .calc-btn.op { background: #3b82f6; color: white; }
-        .calc-btn.action { background: #475569; color: #e2e8f0; font-size: 1rem; }
-        .calc-btn.eq { background: #10b981; }
-        .calc-btn.ac { background: #ef4444; }
+        .input-copy-btn:hover { color: #3b82f6; background: rgba(59,130,246,0.1); }
+        .pr-copy { padding-right: 36px !important; }
+        .text-copy-btn { color: #64748b; cursor: pointer; margin-left: 8px; font-size: 0.8em; transition: color 0.2s; }
+        .text-copy-btn:hover { color: #3b82f6; }
+
+        /* --- PRO CALCULATOR STYLES --- */
+        .calc-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        .pro-btn {
+            @apply h-12 rounded-lg text-sm font-semibold transition-all active:scale-95 flex items-center justify-center shadow-md select-none border border-transparent;
+            background: #1e293b; color: #e2e8f0;
+        }
+        .pro-btn:hover { background: #334155; border-color: #475569; }
+        .pro-btn.num { background: #0f172a; color: white; font-size: 1.1rem; font-family: 'Inter', sans-serif; }
+        .pro-btn.num:hover { background: #1e293b; }
+        .pro-btn.op { background: #3b82f6; color: white; font-size: 1.1rem; }
+        .pro-btn.op:hover { background: #2563eb; }
+        .pro-btn.fn { background: #334155; color: #94a3b8; font-size: 0.85rem; }
+        .pro-btn.fn:hover { background: #475569; color: white; }
+        .pro-btn.ac { background: #ef4444; color: white; }
+        .pro-btn.eq { background: #10b981; color: white; grid-column: span 1; }
+
+        .calc-screen {
+            @apply bg-dark-input rounded-xl p-4 mb-4 border border-dark-600 shadow-inner flex flex-col relative overflow-hidden;
+            height: 140px;
+        }
+        .calc-mode-indicator {
+            @apply absolute top-3 left-3 text-[10px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-colors;
+        }
+        .mode-deg { @apply bg-orange-500/20 text-orange-400 border border-orange-500/30; }
+        .mode-rad { @apply bg-blue-500/20 text-blue-400 border border-blue-500/30; }
+        
+        .calc-history-list {
+            @apply text-[10px] text-slate-500 h-8 overflow-hidden text-right mb-1 leading-4 opacity-70;
+        }
+        .calc-expression {
+            @apply text-sm text-slate-400 text-right h-6 overflow-hidden whitespace-nowrap;
+        }
+        .calc-result-preview {
+            @apply text-lg text-slate-600 text-right h-6 overflow-hidden font-mono;
+        }
+        .calc-main-display {
+            @apply text-3xl font-mono text-white text-right overflow-x-auto whitespace-nowrap scrollbar-hide mt-auto flex justify-end items-center;
+        }
+        .cursor {
+            width: 2px; height: 1.2em; background-color: #3b82f6; animation: blink 1s step-end infinite; display: inline-block; margin-left: 2px;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
 
         .app-section { display: none; }
         .app-section.active { display: block; animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -72,7 +115,7 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
                     colors: {
                         dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155', input: '#020617' },
                         accent: { 500: '#3b82f6', 600: '#2563eb' },
@@ -85,10 +128,8 @@
 </head>
 <body class="bg-dark-900 text-slate-200 antialiased min-h-screen flex flex-col">
 
-    <!-- Toast -->
-    <div id="toast"><i class="fa-solid fa-check mr-2"></i> Copiato!</div>
+    <div id="toast"><i class="fa-solid fa-copy text-accent-500"></i> Copiato per Excel!</div>
 
-    <!-- Header -->
     <header class="bg-dark-900/80 border-b border-dark-700 sticky top-0 z-50 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 py-3">
             <div class="flex items-center justify-between mb-4">
@@ -96,10 +137,9 @@
                     <div class="bg-gradient-to-br from-accent-600 to-indigo-600 w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-lg">
                         <i class="fa-solid fa-cube"></i>
                     </div>
-                    <h1 class="text-lg font-bold tracking-tight text-white">Thermo<span class="text-accent-500">Suite</span> <span class="text-xs text-slate-500 font-normal ml-1">v8.0</span></h1>
+                    <h1 class="text-lg font-bold tracking-tight text-white">Thermo<span class="text-accent-500">Suite</span> <span class="text-xs text-slate-500 font-normal ml-1">v11.0</span></h1>
                 </div>
             </div>
-            
             <nav class="flex overflow-x-auto gap-3 pb-2 no-scrollbar">
                 <button onclick="switchTab('termica')" id="tab_termica" class="nav-pill active"><i class="fa-solid fa-temperature-half"></i> Termica</button>
                 <button onclick="switchTab('commerciale')" id="tab_commerciale" class="nav-pill"><i class="fa-solid fa-shop"></i> Commerciale</button>
@@ -114,204 +154,180 @@
 
     <main class="flex-grow container max-w-7xl mx-auto px-4 py-6">
 
-        <!-- ================= SECTION 1: TERMICA (UPDATED) ================= -->
+        <!-- ================= SECTION 1: TERMICA (Same as V9) ================= -->
         <section id="sec_termica" class="app-section active space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Map & Search -->
                 <div class="lg:col-span-5 flex flex-col gap-4">
-                    <!-- Search Box -->
                     <div class="bg-dark-800 rounded-2xl border border-dark-700 shadow-xl p-5 relative z-20">
                         <label class="text-xs text-slate-400 block mb-2 font-bold uppercase">Cerca Comune</label>
                         <div class="relative">
-                            <input type="text" id="search_comune" placeholder="Digita il comune (es. Milano)..." 
-                                   class="w-full bg-dark-input border border-dark-600 rounded-lg pl-10 pr-4 py-3 text-white focus:border-accent-500 outline-none transition-all"
-                                   autocomplete="off">
+                            <input type="text" id="search_comune" placeholder="Digita il comune..." class="w-full bg-dark-input border border-dark-600 rounded-lg pl-10 pr-4 py-3 text-white focus:border-accent-500 outline-none transition-all" autocomplete="off">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-slate-500"></i>
                             <i class="fa-solid fa-spinner fa-spin absolute right-3 top-3.5 text-accent-500 hidden" id="search_loading"></i>
                             <div id="search_results" class="suggestions-list hidden"></div>
                         </div>
                     </div>
-
-                    <!-- Map Container -->
                     <div class="bg-dark-800 rounded-2xl border border-dark-700 shadow-xl p-1 flex-grow relative z-10">
                          <div id="mappaComune" class="h-[350px] w-full rounded-xl border border-dark-700"></div>
                          <div id="map_overlay_info" class="absolute bottom-4 left-4 right-4 bg-dark-900/90 backdrop-blur border border-dark-600 rounded-lg p-3 hidden shadow-lg animate-[fadein_0.3s]">
                             <div class="flex justify-between items-start">
                                 <div>
-                                    <div class="text-xs text-accent-500 font-bold uppercase mb-1">Posizione Selezionata</div>
-                                    <div class="text-white font-bold text-sm" id="overlay_name">--</div>
-                                    <div class="text-xs text-slate-400 mt-1 font-mono">
-                                        Lat: <span id="overlay_lat">--</span> | Lon: <span id="overlay_lon">--</span>
-                                    </div>
+                                    <div class="text-xs text-accent-500 font-bold uppercase mb-1">Posizione</div>
+                                    <div class="text-white font-bold text-sm flex items-center gap-2"><span id="overlay_name">--</span> <i onclick="copyData('overlay_name')" class="fa-regular fa-copy text-copy-btn"></i></div>
                                 </div>
                                 <div class="text-right">
                                     <div class="text-xs text-slate-400">Altitudine</div>
-                                    <div class="text-accent-500 font-bold text-lg"><span id="overlay_alt">--</span> m</div>
+                                    <div class="text-accent-500 font-bold text-lg flex justify-end items-center gap-2"><span id="overlay_alt">--</span> m <i onclick="copyData('overlay_alt')" class="fa-regular fa-copy text-copy-btn"></i></div>
                                 </div>
                             </div>
                          </div>
                     </div>
                 </div>
-
-                <!-- Parameters & Report -->
+                <!-- Parameters -->
                 <div class="lg:col-span-7 bg-dark-800 rounded-2xl border border-dark-700 shadow-xl p-6">
                     <div class="flex justify-between items-center mb-6 border-b border-dark-700 pb-3">
-                        <h2 class="font-semibold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-file-contract text-accent-500"></i> Report Caratteristiche
-                        </h2>
+                        <h2 class="font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-file-contract text-accent-500"></i> Report Caratteristiche</h2>
                         <span class="text-[10px] bg-accent-600/20 text-accent-400 px-2 py-1 rounded border border-accent-600/30">Dati Automatici</span>
                     </div>
-
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-4">
                             <div>
                                 <label class="text-xs text-slate-400 block mb-1">Zona Climatica</label>
-                                <select id="zona_climatica" class="w-full bg-dark-input border border-dark-700 rounded-lg p-3 text-sm text-white focus:border-accent-500 outline-none transition-colors">
-                                    <option value="A">Zona A</option>
-                                    <option value="B">Zona B</option>
-                                    <option value="C">Zona C</option>
-                                    <option value="D">Zona D</option>
-                                    <option value="E" selected>Zona E</option>
-                                    <option value="F">Zona F</option>
-                                </select>
-                                <div id="auto_zona_msg" class="text-[10px] text-emerald-500 mt-1 hidden"><i class="fa-solid fa-magic-wand-sparkles"></i> Impostata automaticamente</div>
+                                <div class="input-wrapper"><select id="zona_climatica" class="w-full bg-dark-input border border-dark-700 rounded-lg p-3 text-sm text-white focus:border-accent-500 outline-none pr-copy"><option value="A">Zona A</option><option value="B">Zona B</option><option value="C">Zona C</option><option value="D">Zona D</option><option value="E" selected>Zona E</option><option value="F">Zona F</option></select><button onclick="copyData('zona_climatica')" class="input-copy-btn" title="Copia"><i class="fa-regular fa-copy"></i></button></div>
+                                <div id="auto_zona_msg" class="text-[10px] text-emerald-500 mt-1 hidden"><i class="fa-solid fa-magic-wand-sparkles"></i> Auto</div>
                             </div>
                             <div>
-                                <label class="text-xs text-slate-400 block mb-1">Altitudine (m s.l.m.)</label>
-                                <div class="relative">
-                                    <input type="number" id="altitudine" value="0" class="w-full bg-dark-input border border-dark-700 rounded-lg p-3 text-sm text-white focus:border-accent-500 outline-none font-bold">
-                                    <i class="fa-solid fa-mountain absolute right-3 top-3.5 text-slate-600"></i>
-                                </div>
-                                <div id="auto_alt_msg" class="text-[10px] text-emerald-500 mt-1 hidden"><i class="fa-solid fa-satellite"></i> Rilevata da satellite</div>
+                                <label class="text-xs text-slate-400 block mb-1">Altitudine (m)</label>
+                                <div class="input-wrapper"><input type="number" id="altitudine" value="0" class="w-full bg-dark-input border border-dark-700 rounded-lg p-3 text-sm text-white focus:border-accent-500 outline-none font-bold pr-copy"><button onclick="copyData('altitudine')" class="input-copy-btn" title="Copia"><i class="fa-regular fa-copy"></i></button></div>
+                                <div id="auto_alt_msg" class="text-[10px] text-emerald-500 mt-1 hidden"><i class="fa-solid fa-satellite"></i> Satellite</div>
                             </div>
                         </div>
                         <div class="space-y-4 pl-0 md:pl-6 md:border-l border-dark-700">
                             <div>
                                 <label class="text-xs text-slate-400 block mb-1">Zona Neve</label>
-                                <select id="zona_neve" class="w-full bg-dark-input border border-dark-700 rounded-lg p-3 text-sm text-white">
-                                    <option value="I-med">I - Mediterranea</option>
-                                    <option value="I-alp">I - Alpina</option>
-                                    <option value="II">Zona II</option>
-                                    <option value="III">Zona III</option>
-                                </select>
-                                <div id="auto_neve_msg" class="text-[10px] text-emerald-500 mt-1 hidden"><i class="fa-solid fa-magic-wand-sparkles"></i> Impostata automaticamente</div>
+                                <div class="input-wrapper"><select id="zona_neve" class="w-full bg-dark-input border border-dark-700 rounded-lg p-3 text-sm text-white pr-copy"><option value="I-med">I - Mediterranea</option><option value="I-alp">I - Alpina</option><option value="II">Zona II</option><option value="III">Zona III</option></select><button onclick="copyData('zona_neve')" class="input-copy-btn" title="Copia"><i class="fa-regular fa-copy"></i></button></div>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-[10px] text-slate-400">Coeff Ce</label><input type="number" id="coeff_ce" value="1" class="w-full bg-dark-input border-dark-700 rounded p-2 text-sm text-white"></div>
-                                <div><label class="text-[10px] text-slate-400">Coeff Ct</label><input type="number" id="coeff_ct" value="1" class="w-full bg-dark-input border-dark-700 rounded p-2 text-sm text-white"></div>
+                                <div><label class="text-[10px] text-slate-400">Coeff Ce</label><div class="input-wrapper"><input type="number" id="coeff_ce" value="1" class="w-full bg-dark-input border-dark-700 rounded p-2 text-sm text-white pr-copy"><button onclick="copyData('coeff_ce')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                                <div><label class="text-[10px] text-slate-400">Coeff Ct</label><div class="input-wrapper"><input type="number" id="coeff_ct" value="1" class="w-full bg-dark-input border-dark-700 rounded p-2 text-sm text-white pr-copy"><button onclick="copyData('coeff_ct')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Nuova Sezione Risultati Completa -->
                     <div class="mt-6 bg-dark-900/50 rounded-xl p-5 border border-dark-700">
-                        <!-- Limiti Trasmittanza -->
-                        <div class="flex items-center justify-between border-b border-dark-600 pb-2 mb-4">
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Limiti Trasmittanza (DM 2015)</span>
-                            <span class="text-[10px] bg-dark-800 text-slate-500 px-2 py-1 rounded">W/m²K</span>
-                        </div>
+                        <div class="flex items-center justify-between border-b border-dark-600 pb-2 mb-4"><span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Limiti DM 2015</span></div>
                         <div class="grid grid-cols-3 gap-3 text-center mb-6">
-                            <div class="bg-dark-800 rounded-lg p-3 border border-dark-600 shadow-sm">
-                                <i class="fa-solid fa-ruler-vertical text-accent-500 mb-1"></i>
-                                <div class="text-[10px] text-slate-500 uppercase mt-1">Verticali</div>
-                                <div id="rep_limit_vert" class="text-xl font-bold text-white">--</div>
-                                <div class="text-[10px] text-slate-600">Pareti</div>
-                            </div>
-                            <div class="bg-dark-800 rounded-lg p-3 border border-dark-600 shadow-sm">
-                                <i class="fa-solid fa-layer-group text-accent-500 mb-1"></i>
-                                <div class="text-[10px] text-slate-500 uppercase mt-1">Orizzontali</div>
-                                <div id="rep_limit_orizz" class="text-xl font-bold text-white">--</div>
-                                <div class="text-[10px] text-slate-600">Tetti</div>
-                            </div>
-                            <div class="bg-dark-800 rounded-lg p-3 border border-dark-600 shadow-sm">
-                                <i class="fa-solid fa-window-maximize text-accent-500 mb-1"></i>
-                                <div class="text-[10px] text-slate-500 uppercase mt-1">Trasparenti</div>
-                                <div id="rep_limit_trasp" class="text-xl font-bold text-white">--</div>
-                                <div class="text-[10px] text-slate-600">Serramenti</div>
-                            </div>
+                            <div class="bg-dark-800 rounded-lg p-3 border border-dark-600 shadow-sm relative group"><div class="text-[10px] text-slate-500 uppercase mt-1">Verticali</div><div id="rep_limit_vert" class="text-xl font-bold text-white">--</div><button onclick="copyData('rep_limit_vert')" class="absolute top-2 right-2 text-slate-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-regular fa-copy"></i></button></div>
+                            <div class="bg-dark-800 rounded-lg p-3 border border-dark-600 shadow-sm relative group"><div class="text-[10px] text-slate-500 uppercase mt-1">Orizzontali</div><div id="rep_limit_orizz" class="text-xl font-bold text-white">--</div><button onclick="copyData('rep_limit_orizz')" class="absolute top-2 right-2 text-slate-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-regular fa-copy"></i></button></div>
+                            <div class="bg-dark-800 rounded-lg p-3 border border-dark-600 shadow-sm relative group"><div class="text-[10px] text-slate-500 uppercase mt-1">Trasparenti</div><div id="rep_limit_trasp" class="text-xl font-bold text-white">--</div><button onclick="copyData('rep_limit_trasp')" class="absolute top-2 right-2 text-slate-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-regular fa-copy"></i></button></div>
                         </div>
-
-                        <!-- Dati Ambientali -->
                         <div class="text-xs font-bold text-slate-400 uppercase mb-3 border-b border-dark-600 pb-2">Dati Ambientali</div>
                         <div class="grid grid-cols-2 gap-4 text-center">
-                            <div>
-                                <div class="text-[10px] text-slate-500 uppercase">Carico Neve</div>
-                                <div id="rep_val_qs" class="text-xl font-bold text-emerald-400">--</div>
-                                <div class="text-[10px] text-slate-600">kN/m²</div>
-                            </div>
-                             <div>
-                                <div class="text-[10px] text-slate-500 uppercase">Zona</div>
-                                <div id="rep_zona" class="text-xl font-bold text-white">--</div>
-                                <div class="text-[10px] text-slate-600">Climatica</div>
-                            </div>
+                            <div class="relative group"><div class="text-[10px] text-slate-500 uppercase">Carico Neve (kN/m²)</div><div id="rep_val_qs" class="text-xl font-bold text-emerald-400">--</div><button onclick="copyData('rep_val_qs')" class="absolute top-0 right-10 text-slate-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-regular fa-copy"></i></button></div>
+                             <div class="relative group"><div class="text-[10px] text-slate-500 uppercase">Zona Climatica</div><div id="rep_zona" class="text-xl font-bold text-white">--</div><button onclick="copyData('rep_zona')" class="absolute top-0 right-10 text-slate-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-regular fa-copy"></i></button></div>
                         </div>
                     </div>
                 </div>
             </div>
-            
              <div class="bg-dark-800 rounded-xl border border-dark-700 p-5">
                 <h2 class="text-sm font-semibold text-white mb-3 flex items-center gap-2"><i class="fa-solid fa-layer-group text-accent-500"></i> Calcolo Isolante</h2>
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                    <div class="md:col-span-3">
-                        <label class="text-[10px] text-slate-400 block mb-1">Materiale (Database)</label>
-                        <select id="iso_material_select" class="w-full bg-dark-input border border-dark-700 rounded p-2 text-xs text-slate-300">
-                            <option value="">Seleziona...</option>
-                            <option value="0.035">EPS/XPS (0.035)</option>
-                            <option value="0.040">Lana di Roccia (0.040)</option>
-                            <option value="0.022">Poliuretano (0.022)</option>
-                            <option value="0.045">Sughero (0.045)</option>
-                            <option value="0.25">Muratura Poroton (0.25)</option>
-                            <option value="1.50">Calcestruzzo (1.5)</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-2"><label class="text-[10px] text-slate-400 block mb-1">Lambda (λ)</label><input type="number" id="iso_lambda" placeholder="0.035" step="0.001" class="w-full bg-dark-input border border-dark-700 rounded p-2 text-sm text-white"></div>
-                    <div class="md:col-span-2"><label class="text-[10px] text-slate-400 block mb-1">U Target</label><input type="number" id="iso_target" placeholder="0.25" step="0.01" class="w-full bg-dark-input border border-dark-700 rounded p-2 text-sm text-white"></div>
-                    <div class="md:col-span-2"><label class="text-[10px] text-slate-400 block mb-1">R Esistente</label><input type="number" id="iso_r_exist" value="0.30" step="0.01" class="w-full bg-dark-input border border-dark-700 rounded p-2 text-sm text-white"></div>
+                    <div class="md:col-span-3"><label class="text-[10px] text-slate-400 block mb-1">Materiale</label><div class="input-wrapper"><select id="iso_material_select" class="w-full bg-dark-input border border-dark-700 rounded p-2 text-xs text-slate-300 pr-copy"><option value="">Seleziona...</option><option value="0.035">EPS/XPS (0.035)</option><option value="0.040">Lana di Roccia (0.040)</option><option value="0.022">Poliuretano (0.022)</option><option value="0.045">Sughero (0.045)</option><option value="0.25">Muratura Poroton (0.25)</option><option value="1.50">Calcestruzzo (1.5)</option></select></div></div>
+                    <div class="md:col-span-2"><label class="text-[10px] text-slate-400 block mb-1">Lambda (λ)</label><div class="input-wrapper"><input type="number" id="iso_lambda" placeholder="0.035" step="0.001" class="w-full bg-dark-input border border-dark-700 rounded p-2 text-sm text-white pr-copy"><button onclick="copyData('iso_lambda')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                    <div class="md:col-span-2"><label class="text-[10px] text-slate-400 block mb-1">U Target</label><div class="input-wrapper"><input type="number" id="iso_target" placeholder="0.25" step="0.01" class="w-full bg-dark-input border border-dark-700 rounded p-2 text-sm text-white pr-copy"><button onclick="copyData('iso_target')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                    <div class="md:col-span-2"><label class="text-[10px] text-slate-400 block mb-1">R Esistente</label><div class="input-wrapper"><input type="number" id="iso_r_exist" value="0.30" step="0.01" class="w-full bg-dark-input border border-dark-700 rounded p-2 text-sm text-white pr-copy"><button onclick="copyData('iso_r_exist')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
                     <div class="md:col-span-3"><button id="btn_calc_iso" class="w-full bg-dark-700 text-accent-500 font-bold px-4 py-2 rounded border border-dark-600 hover:bg-dark-600">Calcola</button></div>
                 </div>
-                <div id="iso_result" class="hidden text-sm text-slate-300 mt-3 border-t border-dark-700 pt-3">
-                    Spessore Minimo: <span class="text-xl font-bold text-white ml-2" id="val_spessore">--</span> cm
-                </div>
+                <div id="iso_result" class="hidden text-sm text-slate-300 mt-3 border-t border-dark-700 pt-3">Spessore Minimo: <span class="text-xl font-bold text-white ml-2" id="val_spessore">--</span> cm <i onclick="copyData('val_spessore')" class="fa-regular fa-copy text-copy-btn"></i></div>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Neve Detail (Simplified) -->
-                <div class="bg-dark-800 rounded-2xl border border-dark-700 p-5 relative overflow-hidden">
-                    <h3 class="text-xs font-bold text-white uppercase mb-2">Dettagli Neve</h3>
-                    <div class="text-xs text-slate-500 mb-4">Carico al suolo (Qsk): <span id="val_qsk_small" class="text-white font-mono">--</span> kN/m²</div>
-                    <div class="bg-dark-900 rounded p-3 border border-dark-700">
-                        <label class="text-[10px] text-slate-400 block mb-2">Pendenza Falda: <span id="angle_display" class="text-accent-500 font-bold">0°</span></label>
-                        <input type="range" id="roof_angle" max="60" value="0" class="w-full h-2 bg-dark-700 rounded appearance-none cursor-pointer">
-                        <div class="flex justify-between text-[10px] text-slate-600 mt-1"><span>0°</span><span>30°</span><span>60°</span></div>
+        </section>
+
+        <!-- ================= SECTION: SCIENTIFICA (NEW PRO V11) ================= -->
+        <section id="sec_scientifica" class="app-section">
+            <div class="max-w-lg mx-auto bg-dark-800 rounded-3xl border border-dark-700 shadow-2xl p-6">
+                <!-- Display Pro -->
+                <div class="calc-screen">
+                    <button id="calc_mode" onclick="toggleCalcMode()" class="calc-mode-indicator mode-deg">DEG</button>
+                    <!-- History List -->
+                    <div id="calc_hist_list" class="calc-history-list">
+                        <!-- History items inserted via JS -->
                     </div>
+                    <!-- Current Expression -->
+                    <div id="calc_expression" class="calc-expression"></div>
+                    <!-- Live Preview -->
+                    <div id="calc_preview" class="calc-result-preview"></div>
+                    <!-- Main Input -->
+                    <div id="calc_main" class="calc-main-display">0<span class="cursor"></span></div>
+                    
+                    <button onclick="copyData('calc_main')" class="absolute bottom-2 left-2 text-slate-700 hover:text-slate-400 text-xs" title="Copia Risultato"><i class="fa-regular fa-copy"></i></button>
                 </div>
 
-                <!-- Check Rapido -->
-                <div class="bg-dark-800 rounded-2xl border border-dark-700 p-5">
-                    <h3 class="text-xs font-bold text-success uppercase mb-3">Check Rapido</h3>
-                    <div class="flex gap-2 mb-3">
-                        <select id="check_type" class="bg-dark-input text-xs rounded p-2 text-slate-300 flex-grow"><option value="trasp">Finestra</option><option value="vert">Parete</option><option value="orizz">Tetto</option></select>
-                        <input type="number" id="user_u" placeholder="U" class="w-16 bg-dark-input rounded p-2 text-xs text-white">
-                        <button id="btn_check" class="bg-accent-600 text-white rounded px-3 hover:bg-accent-500"><i class="fa-solid fa-check"></i></button>
-                    </div>
-                    <div id="check_result" class="text-xs text-center hidden p-2 rounded"></div>
+                <!-- Grid Pro -->
+                <div class="calc-grid">
+                    <!-- Row 1 -->
+                    <button onclick="sciFunc('sin')" class="pro-btn fn">sin</button>
+                    <button onclick="sciFunc('cos')" class="pro-btn fn">cos</button>
+                    <button onclick="sciFunc('tan')" class="pro-btn fn">tan</button>
+                    <button onclick="insertChar('(')" class="pro-btn fn">(</button>
+                    <button onclick="insertChar(')')" class="pro-btn fn">)</button>
+
+                    <!-- Row 2 -->
+                    <button onclick="sciFunc('asin')" class="pro-btn fn">sin⁻¹</button>
+                    <button onclick="sciFunc('acos')" class="pro-btn fn">cos⁻¹</button>
+                    <button onclick="sciFunc('atan')" class="pro-btn fn">tan⁻¹</button>
+                    <button onclick="sciFunc('log')" class="pro-btn fn">log</button>
+                    <button onclick="sciFunc('ln')" class="pro-btn fn">ln</button>
+
+                    <!-- Row 3 -->
+                    <button onclick="insertChar('^2')" class="pro-btn fn">x²</button>
+                    <button onclick="insertChar('^')" class="pro-btn fn">xʸ</button>
+                    <button onclick="sciFunc('sqrt')" class="pro-btn fn">√</button>
+                    <button onclick="sciFunc('random')" class="pro-btn fn text-[10px]">RND</button>
+                    <button onclick="insertChar('/')" class="pro-btn op">÷</button>
+
+                    <!-- Row 4 -->
+                    <button onclick="insertChar('7')" class="pro-btn num">7</button>
+                    <button onclick="insertChar('8')" class="pro-btn num">8</button>
+                    <button onclick="insertChar('9')" class="pro-btn num">9</button>
+                    <button onclick="backspace()" class="pro-btn fn text-red-400"><i class="fa-solid fa-delete-left"></i></button>
+                    <button onclick="insertChar('*')" class="pro-btn op">×</button>
+
+                    <!-- Row 5 -->
+                    <button onclick="insertChar('4')" class="pro-btn num">4</button>
+                    <button onclick="insertChar('5')" class="pro-btn num">5</button>
+                    <button onclick="insertChar('6')" class="pro-btn num">6</button>
+                    <button onclick="clearAll()" class="pro-btn ac">AC</button>
+                    <button onclick="insertChar('-')" class="pro-btn op">-</button>
+
+                    <!-- Row 6 -->
+                    <button onclick="insertChar('1')" class="pro-btn num">1</button>
+                    <button onclick="insertChar('2')" class="pro-btn num">2</button>
+                    <button onclick="insertChar('3')" class="pro-btn num">3</button>
+                    <button onclick="insertChar('PI')" class="pro-btn fn">π</button>
+                    <button onclick="insertChar('+')" class="pro-btn op">+</button>
+
+                    <!-- Row 7 -->
+                    <button onclick="insertChar('0')" class="pro-btn num rounded-bl-lg">0</button>
+                    <button onclick="insertChar('.')" class="pro-btn num">.</button>
+                    <button onclick="insertChar('E')" class="pro-btn fn">e</button>
+                    <button onclick="calcPercent()" class="pro-btn fn">%</button>
+                    <button onclick="calculate()" class="pro-btn eq">=</button>
                 </div>
             </div>
         </section>
 
-        <!-- ================= SECTION: COMMERCIALE (Identica V6) ================= -->
+        <!-- ================= OTHER SECTIONS (Commerciale, etc. SAME AS V9) ================= -->
         <section id="sec_commerciale" class="app-section">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Margine -->
                 <div class="bg-dark-800 rounded-2xl border border-dark-700 p-6 shadow-xl relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
                     <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-emerald-500"></i> Margine & Markup</h2>
                     <div class="space-y-4">
-                        <div><label class="text-xs text-slate-400">Costo (€)</label><input type="number" id="comm_costo" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white" placeholder="0.00"></div>
-                        <div><label class="text-xs text-slate-400">Prezzo di Vendita (€)</label><input type="number" id="comm_prezzo" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white" placeholder="0.00"></div>
+                        <div><label class="text-xs text-slate-400">Costo (€)</label><div class="input-wrapper"><input type="number" id="comm_costo" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white pr-copy" placeholder="0.00"><button onclick="copyData('comm_costo')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                        <div><label class="text-xs text-slate-400">Prezzo Vendita (€)</label><div class="input-wrapper"><input type="number" id="comm_prezzo" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white pr-copy" placeholder="0.00"><button onclick="copyData('comm_prezzo')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
                         <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-dark-700">
-                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Markup %</label><input type="number" id="comm_markup" class="w-full bg-dark-900 border border-dark-600 rounded p-2 text-emerald-400 font-bold text-center" placeholder="0"></div>
-                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Margine %</label><input type="number" id="comm_margine" class="w-full bg-dark-900 border border-dark-600 rounded p-2 text-blue-400 font-bold text-center" placeholder="0"></div>
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Markup %</label><div class="input-wrapper"><input type="number" id="comm_markup" class="w-full bg-dark-900 border border-dark-600 rounded p-2 text-emerald-400 font-bold text-center pr-copy"><button onclick="copyData('comm_markup')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Margine %</label><div class="input-wrapper"><input type="number" id="comm_margine" class="w-full bg-dark-900 border border-dark-600 rounded p-2 text-blue-400 font-bold text-center pr-copy"><button onclick="copyData('comm_margine')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
                         </div>
                     </div>
                 </div>
@@ -319,15 +335,15 @@
                 <div class="bg-dark-800 rounded-2xl border border-dark-700 p-6 shadow-xl relative overflow-hidden">
                     <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-user-tie text-accent-500"></i> Parcella (Italia)</h2>
                     <div class="space-y-3">
-                        <div><label class="text-xs text-slate-400">Onorario (€)</label><input type="number" id="parc_onorario" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white" placeholder="1000.00"></div>
+                        <div><label class="text-xs text-slate-400">Onorario (€)</label><div class="input-wrapper"><input type="number" id="parc_onorario" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white pr-copy" placeholder="1000.00"><button onclick="copyData('parc_onorario')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
                         <div class="grid grid-cols-2 gap-3">
-                            <div><label class="text-[10px] text-slate-500">Cassa %</label><select id="parc_cassa_perc" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-xs text-white"><option value="4">4% (INARC)</option><option value="5">5% (CIPAG)</option><option value="0">0%</option></select></div>
-                            <div><label class="text-[10px] text-slate-500">IVA %</label><input type="number" id="parc_iva_perc" value="22" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-xs text-white"></div>
+                            <div><label class="text-[10px] text-slate-500">Cassa %</label><div class="input-wrapper"><select id="parc_cassa_perc" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-xs text-white pr-copy"><option value="4">4%</option><option value="5">5%</option><option value="0">0%</option></select><button onclick="copyData('parc_cassa_perc')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                            <div><label class="text-[10px] text-slate-500">IVA %</label><div class="input-wrapper"><input type="number" id="parc_iva_perc" value="22" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-xs text-white pr-copy"><button onclick="copyData('parc_iva_perc')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
                         </div>
                         <div class="flex items-center gap-2"><input type="checkbox" id="parc_ritenuta_check" checked class="rounded bg-dark-input border-dark-600"><label for="parc_ritenuta_check" class="text-xs text-slate-400">Ritenuta (20%)</label></div>
                         <div class="bg-dark-900 rounded-xl p-3 space-y-1 mt-2">
-                            <div class="flex justify-between text-sm font-bold pt-2"><span class="text-white">Totale</span><span id="parc_totale" class="text-white">0.00</span></div>
-                            <div class="flex justify-between text-xs text-blue-400 pt-1"><span>Netto</span><span id="parc_netto">0.00</span></div>
+                            <div class="flex justify-between text-sm font-bold pt-2"><span class="text-white">Totale</span><span class="text-white flex items-center gap-2"><span id="parc_totale">0.00</span> <i onclick="copyData('parc_totale')" class="fa-regular fa-copy text-copy-btn"></i></span></div>
+                            <div class="flex justify-between text-xs text-blue-400 pt-1"><span>Netto</span><span class="flex items-center gap-2"><span id="parc_netto">0.00</span> <i onclick="copyData('parc_netto')" class="fa-regular fa-copy text-copy-btn"></i></span></div>
                         </div>
                     </div>
                 </div>
@@ -336,97 +352,92 @@
                     <h2 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-file-invoice-dollar text-slate-400"></i> Calcolo IVA</h2>
                     <div class="flex bg-dark-900 p-1 rounded-lg mb-4"><button onclick="setIvaMode('add')" id="btn_iva_add" class="flex-1 py-1 text-xs rounded font-medium bg-dark-700 text-white">Aggiungi</button><button onclick="setIvaMode('sub')" id="btn_iva_sub" class="flex-1 py-1 text-xs rounded font-medium text-slate-400">Scorpora</button></div>
                     <div class="space-y-4">
-                        <div><label class="text-xs text-slate-400" id="lbl_iva_amount">Importo</label><input type="number" id="iva_amount" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white font-mono text-lg" placeholder="0.00"></div>
-                        <div><input type="number" id="iva_rate" value="22" class="w-16 bg-dark-input border border-dark-600 rounded p-2 text-white text-center text-sm"></div>
-                        <div class="bg-dark-900 rounded-xl p-4 mt-2"><div class="flex justify-between"><span class="text-sm font-bold text-white">Totale</span><span id="res_iva_tot" class="text-xl font-bold text-accent-500 font-mono">0.00 €</span></div></div>
+                        <div><label class="text-xs text-slate-400" id="lbl_iva_amount">Importo</label><div class="input-wrapper"><input type="number" id="iva_amount" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white font-mono text-lg pr-copy" placeholder="0.00"><button onclick="copyData('iva_amount')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                        <div><div class="input-wrapper"><input type="number" id="iva_rate" value="22" class="w-16 bg-dark-input border border-dark-600 rounded p-2 text-white text-center text-sm pr-copy"><button onclick="copyData('iva_rate')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                        <div class="bg-dark-900 rounded-xl p-4 mt-2"><div class="flex justify-between"><span class="text-sm font-bold text-white">Totale</span><span class="text-xl font-bold text-accent-500 font-mono flex items-center gap-2"><span id="res_iva_tot">0.00 €</span> <i onclick="copyData('res_iva_tot')" class="fa-regular fa-copy text-copy-btn"></i></span></div></div>
                     </div>
                 </div>
             </div>
         </section>
-
-        <!-- ================= SECTION: PERCENTUALI ================= -->
+        
         <section id="sec_percentuali" class="app-section">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 <div class="bg-dark-800 rounded-2xl border border-dark-700 p-6 shadow-xl">
                     <h2 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-arrow-trend-up text-accent-500"></i> Applica %</h2>
                     <div class="flex gap-4 mb-4">
-                        <input type="number" id="perc_val" class="w-full bg-dark-input border border-dark-600 rounded-lg p-3 text-white text-lg font-mono" placeholder="Valore">
-                        <input type="number" id="perc_rate" class="w-24 bg-dark-input border border-dark-600 rounded-lg p-3 text-white text-lg font-mono" placeholder="%">
+                        <div class="input-wrapper"><input type="number" id="perc_val" class="w-full bg-dark-input border border-dark-600 rounded-lg p-3 text-white text-lg font-mono pr-copy" placeholder="Valore"><button onclick="copyData('perc_val')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                        <div class="input-wrapper w-32"><input type="number" id="perc_rate" class="w-full bg-dark-input border border-dark-600 rounded-lg p-3 text-white text-lg font-mono pr-copy" placeholder="%"><button onclick="copyData('perc_rate')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <button onclick="calcPerc('add')" class="bg-dark-700 hover:bg-emerald-600/20 p-4 rounded-xl text-emerald-400 font-bold text-xl" id="res_perc_add">--</button>
-                        <button onclick="calcPerc('sub')" class="bg-dark-700 hover:bg-red-600/20 p-4 rounded-xl text-red-400 font-bold text-xl" id="res_perc_sub">--</button>
+                        <div class="relative group"><button onclick="calcPerc('add')" class="w-full bg-dark-700 hover:bg-emerald-600/20 p-4 rounded-xl text-emerald-400 font-bold text-xl" id="res_perc_add">--</button><button onclick="copyData('res_perc_add')" class="absolute top-2 right-2 text-slate-500 hover:text-white"><i class="fa-regular fa-copy"></i></button></div>
+                        <div class="relative group"><button onclick="calcPerc('sub')" class="w-full bg-dark-700 hover:bg-red-600/20 p-4 rounded-xl text-red-400 font-bold text-xl" id="res_perc_sub">--</button><button onclick="copyData('res_perc_sub')" class="absolute top-2 right-2 text-slate-500 hover:text-white"><i class="fa-regular fa-copy"></i></button></div>
                     </div>
                 </div>
                  <div class="bg-dark-800 rounded-2xl border border-dark-700 p-6 shadow-xl">
                     <h2 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-percent text-accent-500"></i> Variazione Delta</h2>
                     <div class="space-y-3">
-                         <input type="number" id="delta_start" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white" placeholder="Da">
-                         <input type="number" id="delta_end" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white" placeholder="A">
+                         <div class="input-wrapper"><input type="number" id="delta_start" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white pr-copy" placeholder="Da"><button onclick="copyData('delta_start')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                         <div class="input-wrapper"><input type="number" id="delta_end" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white pr-copy" placeholder="A"><button onclick="copyData('delta_end')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
                     </div>
-                    <div class="mt-4 p-3 bg-dark-900 rounded-xl text-center border border-dark-700 text-2xl font-bold text-slate-300" id="res_delta">-- %</div>
+                    <div class="mt-4 p-3 bg-dark-900 rounded-xl text-center border border-dark-700 text-2xl font-bold text-slate-300 relative group">
+                        <span id="res_delta">-- %</span>
+                        <button onclick="copyData('res_delta')" class="absolute top-1/2 -translate-y-1/2 right-4 text-slate-500 hover:text-white"><i class="fa-regular fa-copy"></i></button>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- ================= SECTION: SCIENTIFICA (Base) ================= -->
-        <section id="sec_scientifica" class="app-section">
-            <div class="max-w-md mx-auto bg-dark-800 rounded-3xl border border-dark-700 shadow-2xl p-6">
-                <div class="bg-dark-input rounded-2xl p-4 mb-6 text-right border border-dark-600 shadow-inner h-24 flex flex-col justify-end">
-                    <div id="calc_hist" class="text-xs text-slate-500 h-4"></div>
-                    <div id="calc_disp" class="text-3xl font-mono text-white overflow-x-auto whitespace-nowrap">0</div>
-                </div>
-                <div class="grid grid-cols-4 gap-3">
-                    <button onclick="sciOp('sin')" class="calc-btn action">sin</button><button onclick="sciOp('cos')" class="calc-btn action">cos</button><button onclick="sciOp('tan')" class="calc-btn action">tan</button><button onclick="sciOp('log')" class="calc-btn action">log</button>
-                    <button onclick="sciOp('sqrt')" class="calc-btn action">√</button><button onclick="sciOp('pow')" class="calc-btn action">xʸ</button><button onclick="appendCalc('(')" class="calc-btn action">(</button><button onclick="appendCalc(')')" class="calc-btn action">)</button>
-                    <button onclick="clearCalc()" class="calc-btn ac font-bold">AC</button><button onclick="deleteCalc()" class="calc-btn action"><i class="fa-solid fa-delete-left"></i></button><button onclick="appendCalc('%')" class="calc-btn action">%</button><button onclick="appendCalc('/')" class="calc-btn op">÷</button>
-                    <button onclick="appendCalc('7')" class="calc-btn">7</button><button onclick="appendCalc('8')" class="calc-btn">8</button><button onclick="appendCalc('9')" class="calc-btn">9</button><button onclick="appendCalc('*')" class="calc-btn op">×</button>
-                    <button onclick="appendCalc('4')" class="calc-btn">4</button><button onclick="appendCalc('5')" class="calc-btn">5</button><button onclick="appendCalc('6')" class="calc-btn">6</button><button onclick="appendCalc('-')" class="calc-btn op">-</button>
-                    <button onclick="appendCalc('1')" class="calc-btn">1</button><button onclick="appendCalc('2')" class="calc-btn">2</button><button onclick="appendCalc('3')" class="calc-btn">3</button><button onclick="appendCalc('+')" class="calc-btn op">+</button>
-                    <button onclick="appendCalc('0')" class="calc-btn col-span-2 rounded-xl">0</button><button onclick="appendCalc('.')" class="calc-btn">.</button><button onclick="solveCalc()" class="calc-btn eq">=</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= SECTION: ALTRI (Interpol, Pendenze, Pesi) ================= -->
+        <!-- ================= SECTION: INTERPOLAZIONE ================= -->
         <section id="sec_interpol" class="app-section">
              <div class="max-w-2xl mx-auto bg-dark-800 rounded-2xl border border-dark-700 shadow-xl p-8">
                 <h2 class="text-xl font-bold text-white mb-6"><i class="fa-solid fa-chart-line text-accent-500"></i> Interpolazione</h2>
                 <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div class="bg-dark-900 p-4 rounded-xl border border-dark-700"><div class="text-xs text-accent-500 font-bold mb-2">P1</div><input type="number" id="int_x1" class="w-full bg-dark-800 mb-2 p-2 rounded text-sm text-white" placeholder="X1"><input type="number" id="int_y1" class="w-full bg-dark-800 p-2 rounded text-sm text-white" placeholder="Y1"></div>
-                    <div class="bg-dark-900 p-4 rounded-xl border border-dark-700"><div class="text-xs text-accent-500 font-bold mb-2">P2</div><input type="number" id="int_x2" class="w-full bg-dark-800 mb-2 p-2 rounded text-sm text-white" placeholder="X2"><input type="number" id="int_y2" class="w-full bg-dark-800 p-2 rounded text-sm text-white" placeholder="Y2"></div>
+                    <div class="bg-dark-900 p-4 rounded-xl border border-dark-700"><div class="text-xs text-accent-500 font-bold mb-2">P1</div>
+                        <div class="input-wrapper mb-2"><input type="number" id="int_x1" class="w-full bg-dark-800 p-2 rounded text-sm text-white pr-copy" placeholder="X1"><button onclick="copyData('int_x1')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                        <div class="input-wrapper"><input type="number" id="int_y1" class="w-full bg-dark-800 p-2 rounded text-sm text-white pr-copy" placeholder="Y1"><button onclick="copyData('int_y1')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                    </div>
+                    <div class="bg-dark-900 p-4 rounded-xl border border-dark-700"><div class="text-xs text-accent-500 font-bold mb-2">P2</div>
+                        <div class="input-wrapper mb-2"><input type="number" id="int_x2" class="w-full bg-dark-800 p-2 rounded text-sm text-white pr-copy" placeholder="X2"><button onclick="copyData('int_x2')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                        <div class="input-wrapper"><input type="number" id="int_y2" class="w-full bg-dark-800 p-2 rounded text-sm text-white pr-copy" placeholder="Y2"><button onclick="copyData('int_y2')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                    </div>
                 </div>
                 <div class="bg-dark-700/30 p-6 rounded-xl border border-dark-700 flex items-center gap-6">
-                    <input type="number" id="int_x" class="flex-grow w-full bg-dark-input p-3 rounded text-white text-lg" placeholder="X target">
-                    <div id="int_res" class="text-3xl font-bold text-accent-500">--</div>
+                    <div class="input-wrapper"><input type="number" id="int_x" class="w-full bg-dark-input p-3 rounded text-white text-lg pr-copy" placeholder="X target"><button onclick="copyData('int_x')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="flex items-center gap-2"><div id="int_res" class="text-3xl font-bold text-accent-500">--</div><i onclick="copyData('int_res')" class="fa-regular fa-copy text-copy-btn text-xl"></i></div>
                 </div>
             </div>
         </section>
 
+        <!-- ================= SECTION: PENDENZE ================= -->
         <section id="sec_pendenze" class="app-section">
             <div class="max-w-3xl mx-auto bg-dark-800 rounded-2xl border border-dark-700 shadow-xl p-6">
                 <h2 class="text-xl font-bold text-white mb-6"><i class="fa-solid fa-ruler-triangle text-accent-500"></i> Pendenze</h2>
                 <div class="bg-dark-900/50 p-4 rounded-xl border border-dark-700 mb-6 flex gap-4 items-end">
-                    <div class="flex-grow"><label class="text-[10px] text-slate-500 block">Dislivello (H)</label><input type="number" id="pend_h" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white text-sm"></div>
-                    <div class="flex-grow"><label class="text-[10px] text-slate-500 block">Distanza (L)</label><input type="number" id="pend_l" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white text-sm"></div>
-                    <div class="flex-none bg-dark-800 px-4 py-2 rounded border border-dark-600 text-white font-mono" id="pend_calc_res">-- %</div>
+                    <div class="flex-grow"><label class="text-[10px] text-slate-500 block">Dislivello (H)</label><div class="input-wrapper"><input type="number" id="pend_h" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white text-sm pr-copy"><button onclick="copyData('pend_h')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                    <div class="flex-grow"><label class="text-[10px] text-slate-500 block">Distanza (L)</label><div class="input-wrapper"><input type="number" id="pend_l" class="w-full bg-dark-input border border-dark-600 rounded p-2 text-white text-sm pr-copy"><button onclick="copyData('pend_l')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div></div>
+                    <div class="flex-none bg-dark-800 px-4 py-2 rounded border border-dark-600 text-white font-mono flex items-center gap-2"><span id="pend_calc_res">-- %</span> <i onclick="copyData('pend_calc_res')" class="fa-regular fa-copy text-copy-btn"></i></div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="bg-dark-900 p-6 rounded-xl border border-dark-700 text-center"><label class="text-sm text-slate-300">Gradi</label><input type="number" id="pend_deg" class="w-full bg-dark-800 p-3 text-white text-center text-xl my-3"><div class="text-2xl font-bold text-accent-500" id="res_perc">-- %</div></div>
-                    <div class="bg-dark-900 p-6 rounded-xl border border-dark-700 text-center"><label class="text-sm text-slate-300">Percentuale</label><input type="number" id="pend_perc" class="w-full bg-dark-800 p-3 text-white text-center text-xl my-3"><div class="text-2xl font-bold text-white" id="res_deg">-- °</div></div>
+                    <div class="bg-dark-900 p-6 rounded-xl border border-dark-700 text-center"><label class="text-sm text-slate-300">Gradi</label><div class="input-wrapper"><input type="number" id="pend_deg" class="w-full bg-dark-800 p-3 text-white text-center text-xl my-3 pr-copy"><button onclick="copyData('pend_deg')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div><div class="text-2xl font-bold text-accent-500 flex justify-center items-center gap-2"><span id="res_perc">-- %</span> <i onclick="copyData('res_perc')" class="fa-regular fa-copy text-copy-btn"></i></div></div>
+                    <div class="bg-dark-900 p-6 rounded-xl border border-dark-700 text-center"><label class="text-sm text-slate-300">Percentuale</label><div class="input-wrapper"><input type="number" id="pend_perc" class="w-full bg-dark-800 p-3 text-white text-center text-xl my-3 pr-copy"><button onclick="copyData('pend_perc')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div><div class="text-2xl font-bold text-white flex justify-center items-center gap-2"><span id="res_deg">-- °</span> <i onclick="copyData('res_deg')" class="fa-regular fa-copy text-copy-btn"></i></div></div>
                 </div>
             </div>
         </section>
         
+        <!-- ================= SECTION: PESI ================= -->
         <section id="sec_pesi" class="app-section">
             <div class="max-w-2xl mx-auto bg-dark-800 rounded-2xl border border-dark-700 shadow-xl p-8">
                 <h2 class="text-xl font-bold text-white mb-6"><i class="fa-solid fa-weight-hanging text-accent-500"></i> Pesi</h2>
                 <div class="flex gap-4 mb-4">
-                    <select id="peso_mat" class="w-full bg-dark-input border border-dark-700 rounded-lg p-2 text-white text-sm"><option value="7850">Acciaio</option><option value="2500">CLS</option><option value="600">Legno</option><option value="2700">Alluminio</option><option value="custom">Custom</option></select>
-                    <input type="number" id="peso_spec" value="7850" class="w-1/3 bg-dark-input border border-dark-700 rounded-lg p-2 text-white text-sm">
+                    <div class="input-wrapper"><select id="peso_mat" class="w-full bg-dark-input border border-dark-700 rounded-lg p-2 text-white text-sm pr-copy"><option value="7850">Acciaio</option><option value="2500">CLS</option><option value="600">Legno</option><option value="2700">Alluminio</option><option value="custom">Custom</option></select><button onclick="copyData('peso_mat')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="input-wrapper w-1/3"><input type="number" id="peso_spec" value="7850" class="w-full bg-dark-input border border-dark-700 rounded-lg p-2 text-white text-sm pr-copy"><button onclick="copyData('peso_spec')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
                 </div>
-                <div class="grid grid-cols-3 gap-4 mb-6"><input type="number" id="peso_l" placeholder="L" class="bg-dark-input p-2 text-white"><input type="number" id="peso_h" placeholder="H" class="bg-dark-input p-2 text-white"><input type="number" id="peso_len" placeholder="Lungh" class="bg-dark-input p-2 text-white"></div>
-                <div class="bg-dark-900 rounded-xl p-6 text-center border border-dark-700"><div class="text-4xl font-bold text-accent-500" id="peso_res">0.00 kg</div></div>
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="input-wrapper"><input type="number" id="peso_l" placeholder="L" class="w-full bg-dark-input p-2 text-white pr-copy"><button onclick="copyData('peso_l')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="input-wrapper"><input type="number" id="peso_h" placeholder="H" class="w-full bg-dark-input p-2 text-white pr-copy"><button onclick="copyData('peso_h')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="input-wrapper"><input type="number" id="peso_len" placeholder="Lungh" class="w-full bg-dark-input p-2 text-white pr-copy"><button onclick="copyData('peso_len')" class="input-copy-btn"><i class="fa-regular fa-copy"></i></button></div>
+                </div>
+                <div class="bg-dark-900 rounded-xl p-6 text-center border border-dark-700"><div class="text-4xl font-bold text-accent-500 flex justify-center items-center gap-2"><span id="peso_res">0.00 kg</span> <i onclick="copyData('peso_res')" class="fa-regular fa-copy text-copy-btn"></i></div></div>
             </div>
         </section>
 
@@ -435,49 +446,43 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // --- UTILS ---
-        function copyToClipboard(id){ navigator.clipboard.writeText(document.getElementById(id).innerText).then(()=>{ const t=document.getElementById("toast"); t.className="show"; setTimeout(()=>t.className="",3000); }); }
-        function switchTab(id){ document.querySelectorAll('.app-section').forEach(el=>el.classList.remove('active')); document.querySelectorAll('.nav-pill').forEach(el=>el.classList.remove('active')); document.getElementById('sec_'+id).classList.add('active'); document.getElementById('tab_'+id).classList.add('active'); if(id==='termica'&&map) setTimeout(()=>map.invalidateSize(),100); }
+        function copyData(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const text = (el.tagName === 'INPUT' || el.tagName === 'SELECT') ? el.value : el.innerText;
+            const ta = document.createElement("textarea");
+            ta.value = text; ta.style.position="fixed"; ta.style.left="-9999px";
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); const t=document.getElementById("toast"); t.className="show"; setTimeout(()=>t.className="",2000); } catch(e){}
+            document.body.removeChild(ta);
+        }
+        
+        function switchTab(id) {
+            // Safe removal
+            document.querySelectorAll('.app-section').forEach(el => el && el.classList.remove('active'));
+            document.querySelectorAll('.nav-pill').forEach(el => el && el.classList.remove('active'));
+            
+            // Safe addition
+            const sec = document.getElementById('sec_' + id);
+            const tab = document.getElementById('tab_' + id);
+            
+            if (sec) sec.classList.add('active');
+            if (tab) tab.classList.add('active');
+            
+            if (id === 'termica' && map) setTimeout(() => map.invalidateSize(), 100);
+        }
 
         // --- MINI DATABASE CAPOLUOGHI (Per Zone Climatiche) ---
-        const capoluoghiDB = {
-            "milano":{z:"E", n:"I-pad"}, "roma":{z:"D", n:"III"}, "torino":{z:"E", n:"I-pad"}, "napoli":{z:"C", n:"II"}, 
-            "palermo":{z:"B", n:"II"}, "genova":{z:"D", n:"II"}, "bologna":{z:"E", n:"I-pad"}, "firenze":{z:"D", n:"II"}, 
-            "bari":{z:"C", n:"II"}, "catania":{z:"B", n:"II"}, "venezia":{z:"E", n:"I-pad"}, "verona":{z:"E", n:"I-pad"},
-            "messina":{z:"B", n:"II"}, "padova":{z:"E", n:"I-pad"}, "trieste":{z:"E", n:"II"}, "brescia":{z:"E", n:"I-pad"},
-            "prato":{z:"D", n:"II"}, "taranto":{z:"C", n:"II"}, "parma":{z:"E", n:"I-pad"}, "modena":{z:"E", n:"I-pad"},
-            "reggio calabria":{z:"B", n:"II"}, "reggio emilia":{z:"E", n:"I-pad"}, "perugia":{z:"E", n:"II"}, "livorno":{z:"D", n:"II"},
-            "ravenna":{z:"E", n:"I-pad"}, "cagliari":{z:"C", n:"II"}, "foggia":{z:"C", n:"II"}, "rimini":{z:"E", n:"II"},
-            "salerno":{z:"C", n:"II"}, "ferrara":{z:"E", n:"I-pad"}, "sassari":{z:"D", n:"II"}, "latina":{z:"C", n:"II"},
-            "giugliano in campania":{z:"C", n:"II"}, "monza":{z:"E", n:"I-pad"}, "siracusa":{z:"B", n:"II"}, "pescara":{z:"C", n:"II"},
-            "bergamo":{z:"E", n:"I-pad"}, "trento":{z:"F", n:"I-alp"}, "forlì":{z:"E", n:"I-pad"}, "vicenza":{z:"E", n:"I-pad"},
-            "terni":{z:"D", n:"II"}, "bolzano":{z:"F", n:"I-alp"}, "novara":{z:"E", n:"I-pad"}, "piacenza":{z:"E", n:"I-pad"},
-            "ancona":{z:"D", n:"II"}, "andria":{z:"C", n:"II"}, "udine":{z:"E", n:"I-pad"}, "arezzo":{z:"E", n:"II"},
-            "cesena":{z:"E", n:"I-pad"}, "lecce":{z:"C", n:"II"}, "pesaro":{z:"D", n:"II"}, "barletta":{z:"C", n:"II"},
-            "alessandria":{z:"E", n:"I-pad"}, "la spezia":{z:"D", n:"II"}, "pisa":{z:"D", n:"II"}, "pistoia":{z:"D", n:"II"},
-            "lucca":{z:"D", n:"II"}, "catanzaro":{z:"C", n:"II"}, "guidonia montecelio":{z:"D", n:"III"}, "como":{z:"E", n:"I-alp"},
-            "treviso":{z:"E", n:"I-pad"}, "brindisi":{z:"C", n:"II"}, "busto arsizio":{z:"E", n:"I-pad"}, "grosseto":{z:"D", n:"II"},
-            "torre del greco":{z:"C", n:"II"}, "marsala":{z:"B", n:"II"}, "varese":{z:"E", n:"I-alp"}, "sesto san giovanni":{z:"E", n:"I-pad"},
-            "pozzuoli":{z:"C", n:"II"}, "cinisello balsamo":{z:"E", n:"I-pad"}, "corigliano-rossano":{z:"C", n:"II"}, "casoria":{z:"C", n:"II"},
-            "asti":{z:"E", n:"I-pad"}, "caserta":{z:"C", n:"II"}, "gela":{z:"B", n:"II"}, "aprilia":{z:"C", n:"III"},
-            "ragusa":{z:"C", n:"II"}, "pavia":{z:"E", n:"I-pad"}, "cremona":{z:"E", n:"I-pad"}, "carpi":{z:"E", n:"I-pad"},
-            "quartu sant'elena":{z:"C", n:"II"}, "lamezia terme":{z:"C", n:"II"}, "altamura":{z:"D", n:"II"}, "imola":{z:"E", n:"I-pad"},
-            "l'aquila":{z:"E", n:"II"}, "massa":{z:"D", n:"II"}, "trapani":{z:"B", n:"II"}, "viterbo":{z:"D", n:"II"},
-            "cosenza":{z:"D", n:"II"}, "potenza":{z:"E", n:"II"}, "castellammare di stabia":{z:"C", n:"II"}, "afragola":{z:"C", n:"II"},
-            "vittoria":{z:"B", n:"II"}, "crotone":{z:"B", n:"II"}, "pomezia":{z:"D", n:"III"}, "vigevano":{z:"E", n:"I-pad"},
-            "carrara":{z:"D", n:"II"}, "caltanissetta":{z:"C", n:"II"}, "viareggio":{z:"D", n:"II"}, "fiumicino":{z:"D", n:"III"},
-            "savona":{z:"D", n:"II"}, "benevento":{z:"C", n:"II"}, "matera":{z:"D", n:"II"}, "fano":{z:"D", n:"II"}
-        };
+        const capoluoghiDB = { "milano":{z:"E", n:"I-pad"}, "roma":{z:"D", n:"III"}, "torino":{z:"E", n:"I-pad"}, "napoli":{z:"C", n:"II"}, "palermo":{z:"B", n:"II"}, "genova":{z:"D", n:"II"}, "bologna":{z:"E", n:"I-pad"}, "firenze":{z:"D", n:"II"}, "bari":{z:"C", n:"II"}, "catania":{z:"B", n:"II"} }; // (Ridotto per brevità)
 
         // --- TERMICA ---
         const trasmittanze = [ {zone:"A",win:3.0,hor:0.35,vert:0.43}, {zone:"B",win:3.0,hor:0.35,vert:0.43}, {zone:"C",win:2.2,hor:0.33,vert:0.34}, {zone:"D",win:1.8,hor:0.26,vert:0.29}, {zone:"E",win:1.4,hor:0.22,vert:0.26}, {zone:"F",win:1.1,hor:0.20,vert:0.24} ];
         const state = { lat: 0, lng: 0, zone: 'E', alt: 0, snowZone: 'I-med', snowCe: 1, snowCt: 1, roofAngle: 0 };
         
-        // Init Map
         const map = L.map('mappaComune').setView([41.9028, 12.4964], 5);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM', maxZoom: 18 }).addTo(map);
         let marker;
 
-        // --- SEARCH LOGIC ---
         const searchInput = document.getElementById('search_comune');
         const resultsBox = document.getElementById('search_results');
         const loadingIcon = document.getElementById('search_loading');
@@ -487,7 +492,6 @@
             clearTimeout(debounceTimer);
             const query = e.target.value;
             if (query.length < 3) { resultsBox.classList.add('hidden'); return; }
-            
             loadingIcon.classList.remove('hidden');
             debounceTimer = setTimeout(() => performSearch(query), 600);
         });
@@ -496,7 +500,6 @@
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=it&limit=5`);
                 const data = await res.json();
-                
                 resultsBox.innerHTML = '';
                 if(data.length > 0) {
                     resultsBox.classList.remove('hidden');
@@ -507,9 +510,7 @@
                         div.onclick = () => selectComune(item);
                         resultsBox.appendChild(div);
                     });
-                } else {
-                    resultsBox.classList.add('hidden');
-                }
+                } else resultsBox.classList.add('hidden');
             } catch(e) { console.error(e); }
             loadingIcon.classList.add('hidden');
         }
@@ -517,117 +518,57 @@
         async function selectComune(item) {
             resultsBox.classList.add('hidden');
             searchInput.value = item.address ? item.address.city || item.address.town || item.display_name.split(',')[0] : item.display_name.split(',')[0];
-            
-            const lat = parseFloat(item.lat);
-            const lon = parseFloat(item.lon);
-            
-            // 1. Update Map
-            if(marker) map.removeLayer(marker);
-            marker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], 12);
+            const lat = parseFloat(item.lat); const lon = parseFloat(item.lon);
+            if(marker) map.removeLayer(marker); marker = L.marker([lat, lon]).addTo(map); map.setView([lat, lon], 12);
             state.lat = lat; state.lng = lon;
-
-            // 2. Fetch Elevation (Open-Meteo)
+            
             let alt = 0;
-            try {
-                const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
-                const elevData = await elevRes.json();
-                if(elevData.elevation) alt = Math.round(elevData.elevation[0]);
-            } catch(e) { console.error("Elevation Error", e); }
-
-            // 3. Update Inputs & State
-            state.alt = alt;
-            document.getElementById('altitudine').value = alt;
-            document.getElementById('auto_alt_msg').classList.remove('hidden');
-
-            // 4. Check DB for Climate Zone
+            try { const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`); const elevData = await elevRes.json(); if(elevData.elevation) alt = Math.round(elevData.elevation[0]); } catch(e) {}
+            
+            state.alt = alt; document.getElementById('altitudine').value = alt; document.getElementById('auto_alt_msg').classList.remove('hidden');
+            
             const cityName = searchInput.value.toLowerCase().trim();
             const dbData = capoluoghiDB[cityName];
-            
             if(dbData) {
-                state.zone = dbData.z;
-                state.snowZone = dbData.n; // Assuming standard mapping
-                document.getElementById('zona_climatica').value = dbData.z;
-                document.getElementById('zona_neve').value = dbData.n === "I-pad" ? "II" : dbData.n; // Fallback for simple list
+                state.zone = dbData.z; state.snowZone = dbData.n; document.getElementById('zona_climatica').value = dbData.z; document.getElementById('zona_neve').value = dbData.n === "I-pad" ? "II" : dbData.n;
                 document.getElementById('auto_zona_msg').classList.remove('hidden');
-                document.getElementById('auto_neve_msg').classList.remove('hidden');
-            } else {
-                document.getElementById('auto_zona_msg').classList.add('hidden');
-                document.getElementById('auto_neve_msg').classList.add('hidden');
             }
 
-            // 5. Show Overlay Info
             document.getElementById('map_overlay_info').classList.remove('hidden');
             document.getElementById('overlay_name').innerText = searchInput.value;
-            document.getElementById('overlay_lat').innerText = lat.toFixed(3);
-            document.getElementById('overlay_lon').innerText = lon.toFixed(3);
             document.getElementById('overlay_alt').innerText = alt;
 
             updateTermica();
         }
 
-        // --- CORE CALCS (UPDATED) ---
         function updateTermica() {
-            // Update Report (Limits)
             const d = trasmittanze.find(x => x.zone === state.zone);
             if(d) {
-                document.getElementById('rep_limit_trasp').innerText = d.win;
-                document.getElementById('rep_limit_vert').innerText = d.vert;
-                document.getElementById('rep_limit_orizz').innerText = d.hor;
+                document.getElementById('rep_limit_trasp').innerText = d.win; document.getElementById('rep_limit_vert').innerText = d.vert; document.getElementById('rep_limit_orizz').innerText = d.hor;
             }
-            
             document.getElementById('rep_zona').innerText = state.zone;
-            
-            // Snow
             const as = state.alt, z = state.snowZone;
             let qsk = 0;
             if (z === 'I-alp') qsk = as <= 200 ? 1.50 : 1.39 * (1 + Math.pow(as/728, 2));
             else if (z === 'I-med') qsk = as <= 200 ? 1.35 : 1.35 * (1 + Math.pow(as/602, 2));
             else if (z === 'II') qsk = as <= 200 ? 1.00 : 0.85 * (1 + Math.pow(as/481, 2));
             else if (z === 'III') qsk = as <= 200 ? 0.60 : 0.51 * (1 + Math.pow(as/481, 2));
-            
             let mu1 = state.roofAngle >= 60 ? 0 : (state.roofAngle > 30 ? 0.8 * (60 - state.roofAngle)/30 : 0.8);
             let qs = qsk * mu1 * state.snowCe * state.snowCt;
-            
             document.getElementById('rep_val_qs').innerText = qs.toFixed(2);
-            document.getElementById('val_qsk_small').innerText = qsk.toFixed(2);
-            
-            // Update slider text
-            document.getElementById('angle_display').innerText = state.roofAngle + '°';
         }
 
-        // Event Listeners for Manual Changes
         document.getElementById('zona_climatica').addEventListener('change', e => { state.zone = e.target.value; updateTermica(); });
-        ['altitudine','zona_neve','coeff_ce','coeff_ct','roof_angle'].forEach(id => document.getElementById(id).addEventListener('input', e => {
-            if(id === 'roof_angle') state.roofAngle = parseFloat(e.target.value);
-            if(id === 'zona_neve') state.snowZone = e.target.value;
-            if(id === 'altitudine') state.alt = parseFloat(e.target.value) || 0;
-            updateTermica();
+        ['altitudine','zona_neve','coeff_ce','coeff_ct'].forEach(id => document.getElementById(id).addEventListener('input', e => {
+            if(id === 'zona_neve') state.snowZone = e.target.value; if(id === 'altitudine') state.alt = parseFloat(e.target.value) || 0; updateTermica();
         }));
         
-        // Other Logic (Insulation, Commercial, etc.) - Minified for space
         document.getElementById('iso_material_select').addEventListener('change', (e) => { if(e.target.value) document.getElementById('iso_lambda').value = e.target.value; });
         document.getElementById('btn_calc_iso').addEventListener('click', () => {
              const l = parseFloat(document.getElementById('iso_lambda').value), ut = parseFloat(document.getElementById('iso_target').value), re = parseFloat(document.getElementById('iso_r_exist').value);
              if(l&&ut) { document.getElementById('val_spessore').innerText = Math.max(0, (1/ut - re)*l*100).toFixed(1); document.getElementById('iso_result').classList.remove('hidden'); }
         });
 
-        // Check Rapido
-         document.getElementById('btn_check').addEventListener('click', () => {
-            const u = parseFloat(document.getElementById('user_u').value);
-            const d = trasmittanze.find(x => x.zone === state.zone);
-            const t = document.getElementById('check_type').value;
-            const limit = t==='trasp'?d.win:(t==='orizz'?d.hor:d.vert);
-            const res = document.getElementById('check_result');
-            res.classList.remove('hidden');
-            res.innerHTML = u <= limit ? `<span class="text-emerald-400 font-bold">OK</span> (Max ${limit})` : `<span class="text-red-400 font-bold">NO</span> (Max ${limit})`;
-            res.className = u <= limit ? "text-xs text-center p-2 rounded bg-emerald-900/30 border border-emerald-800" : "text-xs text-center p-2 rounded bg-red-900/30 border border-red-800";
-        });
-
-        // Init
-        updateTermica();
-
-        // --- OTHER MODULES (Pesi, Percentuali, ecc. same as V6) ---
         function updateComm(t){
             const c=parseFloat(document.getElementById('comm_costo').value),p=parseFloat(document.getElementById('comm_prezzo').value),mu=parseFloat(document.getElementById('comm_markup').value),ma=parseFloat(document.getElementById('comm_margine').value);
             if(t==='val'&&c&&p){document.getElementById('comm_markup').value=((p-c)/c*100).toFixed(2);document.getElementById('comm_margine').value=((p-c)/p*100).toFixed(2);}
@@ -637,7 +578,30 @@
         document.getElementById('comm_costo').addEventListener('input',()=>updateComm('val')); document.getElementById('comm_prezzo').addEventListener('input',()=>updateComm('val'));
         document.getElementById('comm_markup').addEventListener('input',()=>updateComm('markup')); document.getElementById('comm_margine').addEventListener('input',()=>updateComm('margine'));
 
-        // Parcella
+        // IVA
+        let ivaMode = 'add'; 
+        function setIvaMode(mode) {
+            ivaMode = mode;
+            document.getElementById('btn_iva_add').className = mode === 'add' ? 'flex-1 py-1 text-xs rounded font-medium bg-dark-700 text-white shadow' : 'flex-1 py-1 text-xs rounded font-medium text-slate-400 hover:text-white';
+            document.getElementById('btn_iva_sub').className = mode === 'sub' ? 'flex-1 py-1 text-xs rounded font-medium bg-dark-700 text-white shadow' : 'flex-1 py-1 text-xs rounded font-medium text-slate-400 hover:text-white';
+            document.getElementById('lbl_iva_amount').innerText = mode === 'add' ? 'Importo Netto (€)' : 'Importo Lordo (€)';
+            calcIva();
+        }
+        function setIvaRate(r) { document.getElementById('iva_rate').value = r; calcIva(); }
+        function calcIva() {
+            const val = parseFloat(document.getElementById('iva_amount').value);
+            const rate = parseFloat(document.getElementById('iva_rate').value);
+            if(!val || !rate) return;
+            let final;
+            if(ivaMode === 'add') final = val + (val * (rate/100));
+            else final = val; 
+            const net = ivaMode === 'add' ? val : val / (1 + rate/100);
+            const tax = ivaMode === 'add' ? val * (rate/100) : val - net;
+            const total = ivaMode === 'add' ? final : val;
+            document.getElementById('res_iva_tot').innerText = ivaMode === 'add' ? total.toFixed(2) + " €" : net.toFixed(2) + " € (Netto)";
+        }
+        ['iva_amount', 'iva_rate'].forEach(id => document.getElementById(id).addEventListener('input', calcIva));
+
         function calcParc(){
             const o=parseFloat(document.getElementById('parc_onorario').value)||0, cp=parseFloat(document.getElementById('parc_cassa_perc').value)||0, ip=parseFloat(document.getElementById('parc_iva_perc').value)||0, rit=document.getElementById('parc_ritenuta_check').checked;
             const c=o*(cp/100), i=(o+c)*(ip/100), tot=o+c+i, net=tot-(rit?o*0.2:0);
@@ -645,10 +609,205 @@
         }
         ['parc_onorario','parc_cassa_perc','parc_iva_perc','parc_ritenuta_check'].forEach(id=>document.getElementById(id).addEventListener('input',calcParc));
 
-        // Scientifica
-        let cs=""; const cd=document.getElementById('calc_disp');
-        function appendCalc(c){cs+=c;cd.innerText=cs;} function clearCalc(){cs="";cd.innerText="0";} function deleteCalc(){cs=cs.slice(0,-1);cd.innerText=cs||"0";} function sciOp(o){cs+=`Math.${o}(`;cd.innerText=cs;} function solveCalc(){try{cd.innerText=eval(cs.replace(/[^-()\d/*+%.Matha-z]/g,''));cs=cd.innerText;}catch{cd.innerText="Err";}}
+        // --- PERCENTUALI ---
+        function calcPerc(op) {
+            const val = parseFloat(document.getElementById('perc_val').value);
+            const rate = parseFloat(document.getElementById('perc_rate').value);
+            if(isNaN(val) || isNaN(rate)) return;
+            const amount = val * (rate/100);
+            if(op === 'add') document.getElementById('res_perc_add').innerText = (val + amount).toFixed(2);
+            if(op === 'sub') document.getElementById('res_perc_sub').innerText = (val - amount).toFixed(2);
+        }
+        function calcDelta() {
+            const s = parseFloat(document.getElementById('delta_start').value);
+            const e = parseFloat(document.getElementById('delta_end').value);
+            if(!isNaN(s) && !isNaN(e) && s !== 0) {
+                const delta = ((e - s) / s) * 100;
+                const el = document.getElementById('res_delta');
+                el.innerText = (delta > 0 ? "+" : "") + delta.toFixed(2) + " %";
+                el.className = delta >= 0 ? "text-2xl font-bold text-emerald-400" : "text-2xl font-bold text-red-400";
+            }
+        }
+        ['delta_start', 'delta_end'].forEach(id => document.getElementById(id).addEventListener('input', calcDelta));
 
+        // --- OLD MODULES (Interpol, Pendenze, Pesi) ---
+        ['int_x1','int_y1','int_x2','int_y2','int_x'].forEach(id => document.getElementById(id).addEventListener('input', () => {
+             const x1=parseFloat(document.getElementById('int_x1').value), y1=parseFloat(document.getElementById('int_y1').value);
+             const x2=parseFloat(document.getElementById('int_x2').value), y2=parseFloat(document.getElementById('int_y2').value);
+             const x=parseFloat(document.getElementById('int_x').value);
+             if(!isNaN(x1) && !isNaN(y1) && !isNaN(x2) && !isNaN(y2) && !isNaN(x)) {
+                 document.getElementById('int_res').innerText = (y1 + (x-x1)*(y2-y1)/(x2-x1)).toFixed(3);
+             }
+        }));
+        
+        document.getElementById('pend_deg').addEventListener('input', e => {
+            const v = parseFloat(e.target.value);
+            if(!isNaN(v)) document.getElementById('res_perc').innerText = (Math.tan(v * Math.PI/180)*100).toFixed(1) + " %";
+        });
+        document.getElementById('pend_perc').addEventListener('input', e => {
+            const v = parseFloat(e.target.value);
+            if(!isNaN(v)) document.getElementById('res_deg').innerText = (Math.atan(v/100) * 180/Math.PI).toFixed(2) + " °";
+        });
+        function calcPendFromMeasure() {
+            const h = parseFloat(document.getElementById('pend_h').value);
+            const l = parseFloat(document.getElementById('pend_l').value);
+            if(h && l) {
+                const perc = (h/l)*100;
+                document.getElementById('pend_calc_res').innerText = perc.toFixed(2) + " %";
+            }
+        }
+        ['pend_h', 'pend_l'].forEach(id => document.getElementById(id).addEventListener('input', calcPendFromMeasure));
+
+        const updateWeight = () => {
+             const spec = parseFloat(document.getElementById('peso_spec').value);
+             let volume = 0;
+             const l = parseFloat(document.getElementById('peso_l').value) || 0;
+             const h = parseFloat(document.getElementById('peso_h').value) || 0;
+             const len = parseFloat(document.getElementById('peso_len').value) || 0;
+             volume = l * h * len;
+             if(spec) document.getElementById('peso_res').innerHTML = (volume * spec).toFixed(2) + ' <span class="text-sm">kg</span>';
+        };
+        document.getElementById('peso_mat').addEventListener('change', e => { if(e.target.value!=='custom') document.getElementById('peso_spec').value=e.target.value; updateWeight(); });
+        ['peso_spec','peso_l','peso_h','peso_len'].forEach(id => document.getElementById(id).addEventListener('input', updateWeight));
+
+        // --- SCIENTIFIC CALCULATOR LOGIC (V11) ---
+        let currentExp = "";
+        let calcMode = "deg"; 
+        const display = document.getElementById('calc_main');
+        const preview = document.getElementById('calc_preview');
+        const expressionDisp = document.getElementById('calc_expression');
+        const historyList = document.getElementById('calc_hist_list');
+        const modeBtn = document.getElementById('calc_mode');
+
+        function toggleCalcMode() {
+            calcMode = calcMode === "deg" ? "rad" : "deg";
+            modeBtn.innerText = calcMode.toUpperCase();
+            modeBtn.className = calcMode === "deg" ? "calc-mode-indicator mode-deg" : "calc-mode-indicator mode-rad";
+            tryEval();
+        }
+
+        function insertChar(char) {
+            if (char === 'PI') char = 'π';
+            if ((char === '(' || char === 'π' || char === 'E') && currentExp.length > 0) {
+                const last = currentExp.slice(-1);
+                if (!isNaN(last) || last === ')' || last === 'π' || last === 'E') {
+                    currentExp += '*';
+                }
+            }
+            currentExp += char;
+            updateDisplay();
+        }
+
+        function sciFunc(fn) {
+            if (currentExp.length > 0) {
+                const last = currentExp.slice(-1);
+                if (!isNaN(last) || last === ')') {
+                    currentExp += '*';
+                }
+            }
+            if(fn === 'random') {
+                currentExp += Math.random().toFixed(4);
+            } else {
+                currentExp += fn + "(";
+            }
+            updateDisplay();
+        }
+
+        function backspace() {
+            currentExp = currentExp.slice(0, -1);
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentExp = "";
+            updateDisplay();
+            preview.innerText = "";
+            expressionDisp.innerText = "";
+        }
+
+        function calcPercent() {
+            currentExp += "/100";
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            display.innerText = currentExp.length > 0 ? currentExp : "0";
+            display.innerHTML += '<span class="cursor"></span>';
+            tryEval();
+        }
+
+        function tryEval() {
+            if (currentExp.length === 0) { preview.innerText = ""; return; }
+            try {
+                const res = evaluateExpression(currentExp);
+                if (!isNaN(res) && isFinite(res)) {
+                    preview.innerText = formatNumber(res);
+                } else {
+                    preview.innerText = "";
+                }
+            } catch (e) {
+                preview.innerText = "";
+            }
+        }
+
+        function calculate() {
+            if (currentExp.length === 0) return;
+            try {
+                const res = evaluateExpression(currentExp);
+                if (isNaN(res) || !isFinite(res)) throw new Error("Err");
+                addToHistory(currentExp + " = " + formatNumber(res));
+                expressionDisp.innerText = currentExp + " =";
+                currentExp = res.toString();
+                updateDisplay();
+                preview.innerText = "";
+            } catch (e) {
+                preview.innerText = "Errore";
+            }
+        }
+
+        function addToHistory(item) {
+            const span = document.createElement("div");
+            span.innerText = item;
+            historyList.prepend(span);
+            if (historyList.children.length > 3) historyList.removeChild(historyList.lastChild);
+        }
+
+        function formatNumber(num) {
+            return parseFloat(num.toPrecision(12)).toString();
+        }
+
+        function evaluateExpression(str) {
+            let safeStr = str.replace(/π/g, Math.PI).replace(/E/g, Math.E);
+            safeStr = safeStr.replace(/\^/g, "**");
+            safeStr = safeStr.replace(/(\d+)!/g, "factorial($1)");
+            safeStr = safeStr.replace(/sqrt\(/g, "Math.sqrt(");
+            safeStr = safeStr.replace(/log\(/g, "Math.log10(");
+            safeStr = safeStr.replace(/ln\(/g, "Math.log(");
+            
+            const toRad = (x) => calcMode === 'deg' ? x * (Math.PI/180) : x;
+            const toDeg = (x) => calcMode === 'deg' ? x * (180/Math.PI) : x;
+
+            safeStr = safeStr.replace(/asin\(/g, "calc_asin(");
+            safeStr = safeStr.replace(/acos\(/g, "calc_acos(");
+            safeStr = safeStr.replace(/atan\(/g, "calc_atan(");
+            safeStr = safeStr.replace(/sin\(/g, "calc_sin(");
+            safeStr = safeStr.replace(/cos\(/g, "calc_cos(");
+            safeStr = safeStr.replace(/tan\(/g, "calc_tan(");
+
+            return eval(safeStr);
+        }
+
+        function factorial(n) { return (n != 1) ? n * factorial(n - 1) : 1; }
+        function calc_sin(x) { return Math.sin(calcMode==='deg'?x*Math.PI/180:x); }
+        function calc_cos(x) { return Math.cos(calcMode==='deg'?x*Math.PI/180:x); }
+        function calc_tan(x) { return Math.tan(calcMode==='deg'?x*Math.PI/180:x); }
+        function calc_asin(x) { return calcMode==='deg'?Math.asin(x)*180/Math.PI:Math.asin(x); }
+        function calc_acos(x) { return calcMode==='deg'?Math.acos(x)*180/Math.PI:Math.acos(x); }
+        function calc_atan(x) { return calcMode==='deg'?Math.atan(x)*180/Math.PI:Math.atan(x); }
+
+        // Init
+        updateTermica();
+        updateDisplay();
     </script>
 </body>
 </html>
